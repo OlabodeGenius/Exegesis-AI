@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-exegesis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-exegesis}
+      POSTGRES_DB: ${POSTGRES_DB:-exegesis}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-exegesis}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: ../..
+      dockerfile: ops/docker/Dockerfile.api
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://exegesis:exegesis@db:5432/exegesis}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      VECTOR_DATABASE_URL: ${VECTOR_DATABASE_URL:-postgresql+psycopg://exegesis:exegesis@db:5432/exegesis}
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      API_BASE_URL: ${API_URL:-http://0.0.0.0:8000}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  worker:
+    image: python:3.11-slim
+    working_dir: /app
+    command: ["bash", "-lc", "pip install rq redis && rq worker exegesis --url ${REDIS_URL:-redis://redis:6379/0}"]
+    depends_on:
+      - redis
+
+  frontend:
+    build:
+      context: ../..
+      dockerfile: ops/docker/Dockerfile.frontend
+    environment:
+      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:8000/api/v1}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+*** End Patch  */``` }  ***!
+

@@ -1,24 +1,19 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, status
+
+from ....schemas import ExportRequest, ExportResponse
+from ....services.datastore import store
 
 router = APIRouter()
 
 
-class ExportRequest(BaseModel):
-	study_id: str | None = None
-	journal_id: str | None = None
-	format: str = "pdf"
+@router.post("", response_model=ExportResponse, summary="Create a study or journal export bundle")
+async def create_export(payload: ExportRequest) -> ExportResponse:
+    return store.create_export(payload)
 
 
-@router.post("")
-def create_export(payload: ExportRequest):
-	# Stub export creation
-	return {"id": "exp_123", "status": "processing", "format": payload.format}
-
-
-@router.get("/{export_id}")
-def get_export(export_id: str):
-	# Stub export link
-	return {"id": export_id, "status": "ready", "url": f"https://example.com/exports/{export_id}.pdf"}
-*** End Patch
-
+@router.get("/{export_id}", response_model=ExportResponse, summary="Download an export bundle")
+async def get_export(export_id: str) -> ExportResponse:
+    export = store.get_export(export_id)
+    if not export:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Export not found")
+    return export

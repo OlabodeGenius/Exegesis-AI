@@ -1,5 +1,5 @@
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
-*** End Patch
 
+__all__ = ["Base"]

@@ -1,23 +1,16 @@
 from fastapi import APIRouter, Query
-from pydantic import BaseModel
-from typing import Literal
+
+from ....schemas import Note, NoteCreate, NotesResponse
+from ....services.datastore import store
 
 router = APIRouter()
 
 
-class NoteCreate(BaseModel):
-	verse_ref: str
-	stage: Literal["observation", "interpretation", "application"]
-	content_md: str
+@router.post("", response_model=Note, summary="Persist a personal study note")
+async def add_note(payload: NoteCreate) -> Note:
+    return store.add_note(payload)
 
 
-@router.post("")
-def add_note(payload: NoteCreate):
-	return {"ok": True, "note": payload.model_dump()}
-
-
-@router.get("")
-def list_notes(verse_ref: str = Query(...)):
-	return {"verse_ref": verse_ref, "notes": []}
-*** End Patch
-
+@router.get("", response_model=NotesResponse, summary="Retrieve notes for a verse")
+async def list_notes(verse_ref: str = Query(..., description="Canonical verse reference")) -> NotesResponse:
+    return store.list_notes(verse_ref)

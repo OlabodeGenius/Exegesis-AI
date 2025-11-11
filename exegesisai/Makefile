@@ -19,5 +19,3 @@ migrate:
 
 seed:
 	python -m backend.app.scripts.seed_minimal
-*** End Patch
-

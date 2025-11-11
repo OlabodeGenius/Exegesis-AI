@@ -1,21 +1,16 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
+
+from ....schemas import JournalCreate, JournalEntry, JournalListResponse
+from ....services.datastore import store
 
 router = APIRouter()
 
 
-class JournalCreate(BaseModel):
-	title: str
-	content: str
+@router.post("", response_model=JournalEntry, summary="Create a journal entry")
+async def create_journal(payload: JournalCreate) -> JournalEntry:
+    return store.create_journal(payload)
 
 
-@router.post("")
-def create_journal(payload: JournalCreate):
-	return {"id": "jr_001", "title": payload.title, "content": payload.content}
-
-
-@router.get("")
-def list_journal():
-	return {"items": []}
-*** End Patch
-
+@router.get("", response_model=JournalListResponse, summary="List journal entries")
+async def list_journal() -> JournalListResponse:
+    return store.list_journal()
